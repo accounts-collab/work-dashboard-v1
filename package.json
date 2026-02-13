@@ -2,7 +2,7 @@
     "name": "work-dashboard-root",
     "version": "1.0.0",
     "scripts": {
-        "build": "cd \"Financial Dashboard\" && npm install && npm run build"
+        "build": "cd \"Financial Dashboard\" && npm install --include=dev && npm run build"
     },
     "dependencies": {
         "bcryptjs": "^3.0.3",
