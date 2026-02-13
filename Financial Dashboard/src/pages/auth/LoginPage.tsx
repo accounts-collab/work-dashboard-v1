@@ -28,9 +28,13 @@ const LoginPage = () => {
                 const apiError = err as { response?: { data?: { error?: unknown, message?: string } } };
                 const response = apiError.response;
                 if (response?.data?.error) {
-                    errorMessage = typeof response.data.error === 'string'
-                        ? response.data.error
-                        : JSON.stringify(response.data.error);
+                    if (typeof response.data.error === 'string') {
+                        errorMessage = response.data.error;
+                    } else if (typeof response.data.error === 'object' && response.data.error && 'message' in response.data.error) {
+                        errorMessage = (response.data.error as { message: string }).message;
+                    } else {
+                        errorMessage = JSON.stringify(response.data.error);
+                    }
                 } else if (response?.data?.message) {
                     errorMessage = response.data.message;
                 }
