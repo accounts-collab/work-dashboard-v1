@@ -24,7 +24,20 @@ const SignupPage = () => {
             // Let's redirect to login.
             navigate('/login');
         } catch (err: unknown) {
-            const errorMessage = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Signup failed';
+            let errorMessage = 'Signup failed';
+            if (err && typeof err === 'object' && 'response' in err) {
+                const apiError = err as { response?: { data?: { error?: unknown, message?: string } } };
+                const response = apiError.response;
+                if (response?.data?.error) {
+                    errorMessage = typeof response.data.error === 'string'
+                        ? response.data.error
+                        : JSON.stringify(response.data.error);
+                } else if (response?.data?.message) {
+                    errorMessage = response.data.message;
+                }
+            } else if (err instanceof Error) {
+                errorMessage = err.message;
+            }
             setError(errorMessage);
         } finally {
             setIsLoading(false);

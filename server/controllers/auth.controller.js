@@ -7,7 +7,8 @@ class AuthController {
             const user = await authService.signup(username, email, password, role);
             res.status(201).json(user);
         } catch (error) {
-            res.status(400).json({ error: error.message });
+            console.error('Signup error:', error);
+            res.status(400).json({ error: error.message || 'Signup failed' });
         }
     }
 
@@ -26,7 +27,8 @@ class AuthController {
 
             res.json({ user: result.user, accessToken: result.accessToken });
         } catch (error) {
-            res.status(401).json({ error: error.message });
+            console.error('Login error:', error);
+            res.status(401).json({ error: error.message || 'Login failed' });
         }
     }
 

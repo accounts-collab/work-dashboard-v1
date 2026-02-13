@@ -13,7 +13,8 @@ const errorHandler = (err, req, res, next) => {
         url: req.originalUrl
     });
 
-    ApiResponse.error(res, message, statusCode, process.env.NODE_ENV === 'development' ? err.stack : null);
+    const responseMessage = typeof message === 'string' ? message : JSON.stringify(message);
+    ApiResponse.error(res, responseMessage, statusCode, process.env.NODE_ENV === 'development' ? err.stack : null);
 };
 
 module.exports = errorHandler;
