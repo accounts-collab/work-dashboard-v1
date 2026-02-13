@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 
 // Use environment variable or default to localhost
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 let accessToken: string | null = null;
 const refreshSubscribers: ((token: string) => void)[] = [];
