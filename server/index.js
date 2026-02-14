@@ -76,23 +76,25 @@ app.get('/health', async (req, res) => {
     res.json(healthcheck);
 });
 
-// Serve compressed static files with priority for Brotli
-app.use('/', expressStaticGzip(path.join(__dirname, '../Financial Dashboard/dist'), {
-    enableBrotli: true,
-    orderPreference: ['br', 'gz'],
-    setHeaders: function (res, filePath) {
-        if (filePath.endsWith('index.html')) {
-            res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        } else {
-            res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+// Serve compressed static files with priority for Brotli - ONLY LOCALLY
+if (!process.env.VERCEL) {
+    app.use('/', expressStaticGzip(path.join(__dirname, '../Financial Dashboard/dist'), {
+        enableBrotli: true,
+        orderPreference: ['br', 'gz'],
+        setHeaders: function (res, filePath) {
+            if (filePath.endsWith('index.html')) {
+                res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            } else {
+                res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+            }
         }
-    }
-}));
+    }));
 
-// Fallback for SPA
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../Financial Dashboard/dist/index.html'));
-});
+    // Fallback for SPA - ONLY LOCALLY
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, '../Financial Dashboard/dist/index.html'));
+    });
+}
 
 // Error Handler
 app.use(errorHandler);
