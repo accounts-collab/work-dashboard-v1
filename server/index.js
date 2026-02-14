@@ -85,8 +85,9 @@ app.get('/health/db', async (req, res) => {
     res.json(healthcheck);
 });
 
-// Serve compressed static files with priority for Brotli - ONLY LOCALLY
-if (!process.env.VERCEL) {
+// Serve compressed static files with priority for Brotli - ONLY LOCALLY or if explicitly enabled
+// We skip this in production (Railway/Vercel) because we likely deploy frontend separately
+if (process.env.NODE_ENV !== 'production' || process.env.SERVE_STATIC === 'true') {
     app.use('/', expressStaticGzip(path.join(__dirname, '../Financial Dashboard/dist'), {
         enableBrotli: true,
         orderPreference: ['br', 'gz'],
