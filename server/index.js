@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -22,7 +23,10 @@ const app = express();
 
 // Security & Infrastructure Middleware
 app.use(helmet);
-app.use(cors({ origin: config.CORS_ORIGIN }));
+app.use(cors({
+    origin: process.env.FRONTEND_URL || config.CORS_ORIGIN,
+    credentials: true
+}));
 app.use(limiter);
 app.use(requestId);
 app.use(express.json());
@@ -53,7 +57,12 @@ app.use('/api/transactions', authenticateToken, transactionsRoutes);
 app.use('/webhooks', webookRoutes);
 
 // Health Check
-app.get('/health', async (req, res) => {
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', environment: process.env.NODE_ENV });
+});
+
+// Database Health Check
+app.get('/health/db', async (req, res) => {
     const healthcheck = {
         uptime: process.uptime(),
         timestamp: Date.now(),
