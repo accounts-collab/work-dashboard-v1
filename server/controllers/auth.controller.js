@@ -15,7 +15,15 @@ class AuthController {
     async login(req, res, next) {
         try {
             const { email, password } = req.body;
+            console.log(`Login attempt for: ${email}`);
+
+            if (!email || !password) {
+                console.warn('Login failed: Missing email or password');
+                return res.status(400).json({ error: 'Email and password are required' });
+            }
+
             const result = await authService.login(email, password);
+            console.log(`Login successful for: ${email}`);
 
             // Send refresh token as HTTP-only cookie
             res.cookie('refreshToken', result.refreshToken, {
