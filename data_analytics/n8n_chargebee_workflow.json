@@ -89,7 +89,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\n// Extract list array from Chargebee wrapper\nconst list = items[0].json.list || [];\nreturn list.map(item => ({\n  json: item.subscription || item\n}));"
+        "jsCode": "const items = $input.all();\nconst list = items[0].json.list || [];\nreturn list.map(item => ({\n  json: item.subscription || item\n}));"
       },
       "id": "parse-subscriptions",
       "name": "Clean Subscriptions",
@@ -212,6 +212,49 @@
           "id": "Google Sheets OAuth Credential"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst list = items[0].json.list || [];\nlet totalMRR = 0;\nlet active = 0;\nlet cancelled = 0;\n\nlist.forEach(item => {\n  const sub = item.subscription || item;\n  if (sub.status === 'active') {\n    active++;\n    totalMRR += parseFloat(sub.mrr || 0) / 100;\n  } else if (sub.status === 'cancelled') {\n    cancelled++;\n  }\n});\n\nreturn [\n  { json: { Metric: 'Active Subscriptions', Value: active } },\n  { json: { Metric: 'Cancelled Subscriptions', Value: cancelled } },\n  { json: { Metric: 'Monthly Recurring Revenue (MRR)', Value: totalMRR } },\n  { json: { Metric: 'Annual Run Rate (ARR)', Value: totalMRR * 12 } },\n  { json: { Metric: 'Overall Churn Rate', Value: ((cancelled / (active + cancelled)) * 100).toFixed(2) + '%' } }\n];"
+      },
+      "id": "aggregate-metrics",
+      "name": "Calculate Summary KPI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1iumV5rW5VectC483Sasvz3dacTkhusI76ZyQsXsl0X0",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Summary",
+          "mode": "name"
+        },
+        "updateKey": "Metric",
+        "options": {}
+      },
+      "id": "write-gsheet-summary",
+      "name": "Google Sheets Summary",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        920,
+        40
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Google Sheets OAuth Credential"
+        }
+      }
     }
   ],
   "connections": {
@@ -241,6 +284,11 @@
         [
           {
             "node": "parse-subscriptions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Calculate Summary KPI",
             "type": "main",
             "index": 0
           }
@@ -296,6 +344,17 @@
         [
           {
             "node": "Google Sheets Credit Notes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Summary KPI": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets Summary",
             "type": "main",
             "index": 0
           }
