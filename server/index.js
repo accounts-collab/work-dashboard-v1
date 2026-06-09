@@ -114,7 +114,7 @@ module.exports = app;
 
 // Only listen if run directly
 if (require.main === module) {
-    app.listen(config.PORT, () => {
+    app.listen(config.PORT, '0.0.0.0', () => {
         console.log(`Server is running on port ${config.PORT} in ${config.ENV} mode`);
     });
 }

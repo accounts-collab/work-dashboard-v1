@@ -1,5 +1,5 @@
 {
-  "name": "Chargebee to Dashboard Visualization Pipeline",
+  "name": "Chargebee API to Google Sheets Sync",
   "nodes": [
     {
       "parameters": {
@@ -23,119 +23,195 @@
     },
     {
       "parameters": {
-        "resource": "invoice",
-        "operation": "list",
-        "limit": 100,
-        "additionalFields": {
-          "status": "paid"
-        }
-      },
-      "id": "b1c2d3e4-5678-1234-abcd-ef0123456789",
-      "name": "Fetch Invoices",
-      "type": "n8n-nodes-base.chargebee",
-      "typeVersion": 1,
-      "position": [
-        480,
-        300
-      ],
-      "credentials": {
-        "chargebeeApi": {
-          "id": "cb-credential-placeholder"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "resource": "subscription",
-        "operation": "list",
-        "limit": 100
-      },
-      "id": "c2d3e4f5-6789-1234-abcd-ef0123456789",
-      "name": "Fetch Subscriptions",
-      "type": "n8n-nodes-base.chargebee",
-      "typeVersion": 1,
-      "position": [
-        480,
-        150
-      ],
-      "credentials": {
-        "chargebeeApi": {
-          "id": "cb-credential-placeholder"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const items = $input.all();\nlet totalMRR = 0;\nlet activeCount = 0;\nlet cancelledCount = 0;\n\nitems.forEach(item => {\n  const sub = item.json.subscription || item.json;\n  if (sub.status === 'active') {\n    activeCount++;\n    totalMRR += parseFloat(sub.mrr || 0) / 100; // Chargebee returns cents\n  } else if (sub.status === 'cancelled') {\n    cancelledCount++;\n  }\n});\n\nreturn [{\n  json: {\n    activeSubscriptions: activeCount,\n    cancelledSubscriptions: cancelledCount,\n    totalSubscriptions: activeCount + cancelledCount,\n    mrr: totalMRR,\n    arr: totalMRR * 12,\n    churnRate: (cancelledCount / (activeCount + cancelledCount) * 100).toFixed(2) + '%'\n  }\n}];"
-      },
-      "id": "d3e4f5a6-7890-1234-abcd-ef0123456789",
-      "name": "Aggregate Subscriptions",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        700,
-        150
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "const items = $input.all();\nlet totalRevenue = 0;\nlet invoiceCount = 0;\n\nitems.forEach(item => {\n  const inv = item.json.invoice || item.json;\n  totalRevenue += parseFloat(inv.amount_paid || 0) / 100;\n  invoiceCount++;\n});\n\nreturn [{\n  json: {\n    totalRevenue,\n    invoiceCount\n  }\n}];"
-      },
-      "id": "e4f5a6b7-8901-1234-abcd-ef0123456789",
-      "name": "Aggregate Revenue",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        700,
-        300
-      ]
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combinationMode": "mergeByPosition"
-      },
-      "id": "f5a6b7c8-9012-1234-abcd-ef0123456789",
-      "name": "Merge Aggregates",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
-      "position": [
-        920,
-        220
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.dashboard-webhook-receiver.local/update-metrics",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "data",
-              "value": "={{ $json }}"
-            }
-          ]
-        },
+        "method": "GET",
+        "url": "https://hyperzod.chargebee.com/api/v2/subscriptions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
         "options": {}
       },
-      "id": "g6b7c8d9-0123-1234-abcd-ef0123456789",
-      "name": "Push to Dashboard UI",
+      "id": "http-fetch-subscriptions",
+      "name": "Fetch Subscriptions API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1120,
-        220
+        480,
+        150
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "Unnamed credential 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://hyperzod.chargebee.com/api/v2/invoices",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "id": "http-fetch-invoices",
+      "name": "Fetch Invoices API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        300
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "Unnamed credential 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://hyperzod.chargebee.com/api/v2/credit_notes",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "id": "http-fetch-credit-notes",
+      "name": "Fetch Credit Notes API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        450
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "Unnamed credential 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n// Extract list array from Chargebee wrapper\nconst list = items[0].json.list || [];\nreturn list.map(item => ({\n  json: item.subscription || item\n}));"
+      },
+      "id": "parse-subscriptions",
+      "name": "Clean Subscriptions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        150
       ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst list = items[0].json.list || [];\nreturn list.map(item => ({\n  json: item.invoice || item\n}));"
+      },
+      "id": "parse-invoices",
+      "name": "Clean Invoices",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst list = items[0].json.list || [];\nreturn list.map(item => ({\n  json: item.credit_note || item\n}));"
+      },
+      "id": "parse-credit-notes",
+      "name": "Clean Credit Notes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1iumV5rW5VectC483Sasvz3dacTkhusI76ZyQsXsl0X0",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Subscriptions",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "write-gsheet-subs",
+      "name": "Google Sheets Subscriptions",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        920,
+        150
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Google Sheets OAuth Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1iumV5rW5VectC483Sasvz3dacTkhusI76ZyQsXsl0X0",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Invoices",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "write-gsheet-invs",
+      "name": "Google Sheets Invoices",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        920,
+        300
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Google Sheets OAuth Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1iumV5rW5VectC483Sasvz3dacTkhusI76ZyQsXsl0X0",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Credit Notes",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "write-gsheet-cn",
+      "name": "Google Sheets Credit Notes",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        920,
+        450
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Google Sheets OAuth Credential"
+        }
+      }
     }
   ],
   "connections": {
@@ -143,67 +219,83 @@
       "main": [
         [
           {
-            "node": "Fetch Subscriptions",
+            "node": "Fetch Subscriptions API",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Fetch Invoices",
+            "node": "Fetch Invoices API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Credit Notes API",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Fetch Subscriptions": {
+    "Fetch Subscriptions API": {
       "main": [
         [
           {
-            "node": "Aggregate Subscriptions",
+            "node": "parse-subscriptions",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Fetch Invoices": {
+    "Fetch Invoices API": {
       "main": [
         [
           {
-            "node": "Aggregate Revenue",
+            "node": "parse-invoices",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Aggregate Subscriptions": {
+    "Fetch Credit Notes API": {
       "main": [
         [
           {
-            "node": "Merge Aggregates",
+            "node": "parse-credit-notes",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Aggregate Revenue": {
+    "parse-subscriptions": {
       "main": [
         [
           {
-            "node": "Merge Aggregates",
+            "node": "Google Sheets Subscriptions",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ]
       ]
     },
-    "Merge Aggregates": {
+    "parse-invoices": {
       "main": [
         [
           {
-            "node": "Push to Dashboard UI",
+            "node": "Google Sheets Invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "parse-credit-notes": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets Credit Notes",
             "type": "main",
             "index": 0
           }
@@ -215,6 +307,6 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "f784d0b1-4f39-4d6d-8c19-61bf6cbfa6d8",
+  "versionId": "f784d0b1-4f39-4d6d-8c19-61bf6cbfa6e8",
   "id": "n8n-chargebee-dashboard-workflow"
 }

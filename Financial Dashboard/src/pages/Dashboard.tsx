@@ -19,7 +19,8 @@ export const Dashboard = () => {
 
     useEffect(() => {
         // SSE Connection
-        const eventSource = new EventSource('http://localhost:5000/api/events');
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        const eventSource = new EventSource(`${apiUrl}/events`);
 
         eventSource.onopen = () => {
             console.log('SSE connection opened');
