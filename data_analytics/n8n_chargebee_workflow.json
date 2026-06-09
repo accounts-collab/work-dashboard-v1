@@ -1,0 +1,220 @@
+{
+  "name": "Chargebee to Dashboard Visualization Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "a6b8c9d0-1234-5678-abcd-ef0123456789",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "invoice",
+        "operation": "list",
+        "limit": 100,
+        "additionalFields": {
+          "status": "paid"
+        }
+      },
+      "id": "b1c2d3e4-5678-1234-abcd-ef0123456789",
+      "name": "Fetch Invoices",
+      "type": "n8n-nodes-base.chargebee",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ],
+      "credentials": {
+        "chargebeeApi": {
+          "id": "cb-credential-placeholder"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "subscription",
+        "operation": "list",
+        "limit": 100
+      },
+      "id": "c2d3e4f5-6789-1234-abcd-ef0123456789",
+      "name": "Fetch Subscriptions",
+      "type": "n8n-nodes-base.chargebee",
+      "typeVersion": 1,
+      "position": [
+        480,
+        150
+      ],
+      "credentials": {
+        "chargebeeApi": {
+          "id": "cb-credential-placeholder"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nlet totalMRR = 0;\nlet activeCount = 0;\nlet cancelledCount = 0;\n\nitems.forEach(item => {\n  const sub = item.json.subscription || item.json;\n  if (sub.status === 'active') {\n    activeCount++;\n    totalMRR += parseFloat(sub.mrr || 0) / 100; // Chargebee returns cents\n  } else if (sub.status === 'cancelled') {\n    cancelledCount++;\n  }\n});\n\nreturn [{\n  json: {\n    activeSubscriptions: activeCount,\n    cancelledSubscriptions: cancelledCount,\n    totalSubscriptions: activeCount + cancelledCount,\n    mrr: totalMRR,\n    arr: totalMRR * 12,\n    churnRate: (cancelledCount / (activeCount + cancelledCount) * 100).toFixed(2) + '%'\n  }\n}];"
+      },
+      "id": "d3e4f5a6-7890-1234-abcd-ef0123456789",
+      "name": "Aggregate Subscriptions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nlet totalRevenue = 0;\nlet invoiceCount = 0;\n\nitems.forEach(item => {\n  const inv = item.json.invoice || item.json;\n  totalRevenue += parseFloat(inv.amount_paid || 0) / 100;\n  invoiceCount++;\n});\n\nreturn [{\n  json: {\n    totalRevenue,\n    invoiceCount\n  }\n}];"
+      },
+      "id": "e4f5a6b7-8901-1234-abcd-ef0123456789",
+      "name": "Aggregate Revenue",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition"
+      },
+      "id": "f5a6b7c8-9012-1234-abcd-ef0123456789",
+      "name": "Merge Aggregates",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        920,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dashboard-webhook-receiver.local/update-metrics",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data",
+              "value": "={{ $json }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "g6b7c8d9-0123-1234-abcd-ef0123456789",
+      "name": "Push to Dashboard UI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Subscriptions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Subscriptions": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Subscriptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Invoices": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Revenue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Subscriptions": {
+      "main": [
+        [
+          {
+            "node": "Merge Aggregates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Revenue": {
+      "main": [
+        [
+          {
+            "node": "Merge Aggregates",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Aggregates": {
+      "main": [
+        [
+          {
+            "node": "Push to Dashboard UI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f784d0b1-4f39-4d6d-8c19-61bf6cbfa6d8",
+  "id": "n8n-chargebee-dashboard-workflow"
+}

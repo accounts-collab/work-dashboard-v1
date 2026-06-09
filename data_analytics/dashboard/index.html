@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hyperzod Executive Analytics Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="logo-area">
+          <div class="logo-icon">H</div>
+          <span class="logo-text">Hyperzod <span class="logo-sub">Analytics</span></span>
+        </div>
+        <nav class="nav-menu">
+          <button class="nav-item active" data-tab="summary">
+            <i data-lucide="layout-dashboard"></i>
+            <span>Executive Summary</span>
+          </button>
+          <button class="nav-item" data-tab="kpis">
+            <i data-lucide="line-chart"></i>
+            <span>KPI Charts</span>
+          </button>
+          <button class="nav-item" data-tab="regional">
+            <i data-lucide="globe"></i>
+            <span>Regional Diagnostics</span>
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          <p>Chargebee Audit v1.0</p>
+          <span class="status-indicator">● System Online</span>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+          <div class="header-title-area">
+            <h1>Hyperzod Billing & Growth Dashboard</h1>
+            <p>Strategic financial intelligence for leadership decision-making</p>
+          </div>
+          <div class="header-actions">
+            <span class="date-badge">June 9, 2026</span>
+          </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-body">
+          
+          <!-- Summary Tab -->
+          <section id="tab-summary" class="tab-pane active">
+            <!-- Grid of Key Metrics Cards -->
+            <div class="stats-grid">
+              <div class="metric-card card-mrr">
+                <div class="card-header">
+                  <span class="card-label">Monthly Recurring Revenue</span>
+                  <div class="card-icon"><i data-lucide="dollar-sign"></i></div>
+                </div>
+                <div class="card-value">$178,418.94</div>
+                <div class="card-footer">
+                  <span class="trend-indicator upward">Active MRR Base</span>
+                </div>
+              </div>
+
+              <div class="metric-card card-arr">
+                <div class="card-header">
+                  <span class="card-label">Annual Run Rate (ARR)</span>
+                  <div class="card-icon"><i data-lucide="trending-up"></i></div>
+                </div>
+                <div class="card-value">$2,141,027.28</div>
+                <div class="card-footer">
+                  <span class="trend-indicator upward">MRR Projected x 12</span>
+                </div>
+              </div>
+
+              <div class="metric-card card-churn">
+                <div class="card-header">
+                  <span class="card-label">Overall Churn Rate</span>
+                  <div class="card-icon"><i data-lucide="users-round"></i></div>
+                </div>
+                <div class="card-value">68.78%</div>
+                <div class="card-footer">
+                  <span class="trend-indicator downward">Critical Retention Alert</span>
+                </div>
+              </div>
+
+              <div class="metric-card card-payments">
+                <div class="card-header">
+                  <span class="card-label">Payment Success Rate</span>
+                  <div class="card-icon"><i data-lucide="shield-check"></i></div>
+                </div>
+                <div class="card-value">47.9%</div>
+                <div class="card-footer">
+                  <span class="trend-indicator downward">52.1% Transaction Declines</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Focus Insights Section -->
+            <div class="insights-row">
+              <div class="insight-block glassmorphic main-insights">
+                <h3><i data-lucide="alert-triangle" class="warning-icon"></i> Executive Diagnostic Summary</h3>
+                <ul class="insight-list">
+                  <li><strong>Significant Churn Divergence:</strong> Yearly commitments exhibit a <strong>38.6% churn rate</strong> versus <strong>71.3%</strong> for monthly commitments (statistically significant at $p &lt; 0.001$).</li>
+                  <li><strong>Revenue Pipeline Friction:</strong> 52.1% of transactions fail, representing millions in cumulative blocked funds.</li>
+                  <li><strong>Addressable Failures:</strong> 58.3% of transaction failures are due to <em>insufficient funds</em>, which can be mitigated via optimized retry logic.</li>
+                </ul>
+              </div>
+              <div class="insight-block glassmorphic side-stats">
+                <h3>Subscription Breakdown</h3>
+                <div class="donut-stats-container">
+                  <div class="sub-stat-row">
+                    <span class="sub-dot active-dot"></span>
+                    <span class="sub-label">Active Subscriptions</span>
+                    <span class="sub-val">177</span>
+                  </div>
+                  <div class="sub-stat-row">
+                    <span class="sub-dot cancelled-dot"></span>
+                    <span class="sub-label">Cancelled Subscriptions</span>
+                    <span class="sub-val">390</span>
+                  </div>
+                  <div class="sub-stat-row">
+                    <span class="sub-dot total-dot"></span>
+                    <span class="sub-label">Total Historic Scope</span>
+                    <span class="sub-val">567</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- KPIs Tab -->
+          <section id="tab-kpis" class="tab-pane">
+            <div class="charts-grid">
+              <div class="chart-card glassmorphic">
+                <h3>Monthly Subscription Activity</h3>
+                <div class="chart-wrapper">
+                  <canvas id="subsChart"></canvas>
+                </div>
+              </div>
+              <div class="chart-card glassmorphic">
+                <h3>Top Payment Failure Drivers</h3>
+                <div class="chart-wrapper">
+                  <canvas id="declinesChart"></canvas>
+                </div>
+              </div>
+              <div class="chart-card glassmorphic full-width-chart">
+                <h3>Monthly Transaction Cash Flow ($ Blocked vs Success)</h3>
+                <div class="chart-wrapper">
+                  <canvas id="txCashChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Regional Tab -->
+          <section id="tab-regional" class="tab-pane">
+            <div class="glassmorphic table-card">
+              <h3>Country-by-Country Billing Performance</h3>
+              <div class="table-container">
+                <table class="regional-table">
+                  <thead>
+                    <tr>
+                      <th>Country</th>
+                      <th>Active</th>
+                      <th>Cancelled</th>
+                      <th>Churn Rate</th>
+                      <th>Active MRR Contribution</th>
+                    </tr>
+                  </thead>
+                  <tbody id="regional-table-body">
+                    <!-- Injected by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
